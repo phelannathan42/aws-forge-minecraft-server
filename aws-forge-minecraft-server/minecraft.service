@@ -1,0 +1,13 @@
+[Unit]
+Description=Minecraft Forge Server
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/aws-forge-minecraft-server/forge-server
+ExecStart=/usr/bin/java -Xms1G -Xmx1G -jar forge-1.19.2-43.2.0.jar nogui
+Restart=on-failure
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
