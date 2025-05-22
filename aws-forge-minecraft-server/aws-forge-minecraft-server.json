@@ -1,0 +1,24 @@
+{
+  "project_name": "aws-forge-minecraft-server",
+  "description": "Forge 1.19.2 modded Minecraft server on AWS EC2 with S3 backups and auto-start on reboot.",
+  "files": {
+    "README.md": "# AWS Forge 1.19.2 Minecraft Server\n\nThis project sets up a modded Minecraft Forge 1.19.2 server on a free-tier AWS EC2 instance, with auto-backups to an S3 bucket and auto-start on reboot.\n\n## \ud83d\ude80 GitHub\nClone this repository:\n```bash\ngit clone https://github.com/NathanPhelan/aws-forge-minecraft-server.git\ncd aws-forge-minecraft-server\nchmod +x setup.sh start-server.sh s3-backup.sh\n./setup.sh\n```\n\n## \ud83d\udee0 Setup Instructions\n\n1. **Launch EC2** (t2.micro, Ubuntu 22.04)\n2. **SSH into EC2**\n3. **Run setup script (above)**\n4. **Upload mods** to your S3 bucket and sync:\n   ```bash\n   aws s3 sync s3://your-bucket-name/mods mods/\n   ```\n5. **Start the server**:\n   ```bash\n   ./start-server.sh\n   ```\n\n6. **Enable Auto-Start on Boot**:\n   ```bash\n   sudo cp minecraft.service /etc/systemd/system/\n   sudo systemctl daemon-reexec\n   sudo systemctl enable minecraft\n   sudo systemctl start minecraft\n   ```\n\n7. **Schedule Backups (Optional)**:\n   ```bash\n   crontab -e\n   # Add: 0 */6 * * * /home/ubuntu/aws-forge-minecraft-server/s3-backup.sh\n   ```\n\n---\n\n## \ud83d\udcc1 Structure\n\n- `setup.sh`: Installs Java, Forge, AWS CLI.\n- `start-server.sh`: Launches the server.\n- `s3-backup.sh`: Uploads world to S3.\n- `minecraft.service`: systemd unit file for auto-start\n- `mods/`: Folder for your mod `.jar` files.\n",
+    "setup.sh": "#!/bin/bash\nsudo apt update && sudo apt install -y openjdk-17-jre-headless awscli unzip screen\nmkdir -p forge-server && cd forge-server\nwget https://maven.minecraftforge.net/net/minecraftforge/forge/1.19.2-43.2.0/forge-1.19.2-43.2.0-installer.jar\njava -jar forge-1.19.2-43.2.0-installer.jar --installServer\naws s3 sync s3://your-bucket-name/mods mods/\n",
+    "start-server.sh": "#!/bin/bash\ncd forge-server\nscreen -dmS minecraft java -Xms1G -Xmx1G -jar forge-1.19.2-43.2.0.jar nogui\n",
+    "s3-backup.sh": "#!/bin/bash\nTIMESTAMP=$(date +%F-%H%M)\naws s3 cp forge-server/world s3://your-bucket-name/backups/world-$TIMESTAMP --recursive\n",
+    "minecraft.service": "[Unit]\nDescription=Minecraft Forge Server\nAfter=network.target\n\n[Service]\nUser=ubuntu\nWorkingDirectory=/home/ubuntu/aws-forge-minecraft-server/forge-server\nExecStart=/usr/bin/java -Xms1G -Xmx1G -jar forge-1.19.2-43.2.0.jar nogui\nRestart=on-failure\nSuccessExitStatus=143\n\n[Install]\nWantedBy=multi-user.target\n"
+  },
+  "instructions": {
+    "launch_ec2": "Create a t2.micro instance on Ubuntu 22.04.",
+    "clone_repo": "git clone https://github.com/NathanPhelan/aws-forge-minecraft-server.git",
+    "run_setup": "chmod +x *.sh && ./setup.sh",
+    "start_server": "./start-server.sh",
+    "enable_autostart": [
+      "sudo cp minecraft.service /etc/systemd/system/",
+      "sudo systemctl daemon-reexec",
+      "sudo systemctl enable minecraft",
+      "sudo systemctl start minecraft"
+    ],
+    "schedule_backups": "crontab -e\n# Add: 0 */6 * * * /home/ubuntu/aws-forge-minecraft-server/s3-backup.sh"
+  }
+}
